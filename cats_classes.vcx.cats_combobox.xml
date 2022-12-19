@@ -1,0 +1,124 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vcx_schema.xsd">
+	<class>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0T50WLE4P</uniqueid>
+		<class><![CDATA[combobox]]></class>
+		<classloc/>
+		<baseclass><![CDATA[combobox]]></baseclass>
+		<objname><![CDATA[cats_combobox]]></objname>
+		<parent/>
+		<properties><![CDATA[Height = 21
+SpecialEffect = 1
+Style = 0
+Width = 100
+BorderColor = 128,128,128
+bdropdownopen = .F.
+cformat = 
+cinputmask = 
+_bchanged = .F.
+Name = "cats_combobox"
+]]></properties>
+		<protected><![CDATA[bdropdownopen
+]]></protected>
+		<methods><![CDATA[PROCEDURE closedropdown
+IF this.bDropDownOpen
+	KEYBOARD '{123}ALT+DNARROW}' PLAIN
+ENDIF 
+this.bDropDownOpen = .f.
+ENDPROC
+PROCEDURE DropDown
+IF this.ReadOnly
+	* prevent dropdown from showing when in readonly mode
+	NODEFAULT
+ELSE
+	this.bDropDownOpen = .t.
+ENDIF 
+ENDPROC
+PROCEDURE GotFocus
+this.bDropDownOpen = .f.
+this._bChanged = .f.
+ENDPROC
+PROCEDURE InteractiveChange
+this._bChanged = .t.
+ENDPROC
+PROCEDURE KeyPress
+LPARAMETERS nKeyCode, nShiftAltCtrl
+IF nKeyCode = 13
+	* enter key will close the dropdown without calling the when event
+	this.bDropDownOpen = .f.
+ENDIF 
+
+IF nKeyCode = 24 AND !this.bDropDownOpen
+	this.openDropDown()
+	NODEFAULT
+ENDIF 
+ENDPROC
+PROCEDURE LostFocus
+IF this._bChanged
+	this._bChanged = .f.
+	this.ChangedAndLostFocus()
+ENDIF
+ENDPROC
+PROCEDURE opendropdown
+IF !this.bDropDownOpen
+	KEYBOARD '{123}ALT+DNARROW}' PLAIN
+ENDIF 
+ENDPROC
+PROCEDURE style_assign
+lparameters tStyle
+IF this.Style = 0
+	this.cInputMask = this.InputMask
+	this.cFormat = this.Format
+ENDIF 
+This.Style = tStyle
+
+this.InputMask = this.cInputMask
+this.Format = this.cFormat
+
+ENDPROC
+]]></methods>
+		<ole/>
+		<ole2/>
+		<reserved1><![CDATA[Class]]></reserved1>
+		<reserved2><![CDATA[1]]></reserved2>
+		<reserved3><![CDATA[bdropdownopen
+cformat
+cinputmask
+_bchanged
+*closedropdown 
+*opendropdown 
+*style_assign 
+*changedandlostfocus 
+]]></reserved3>
+		<reserved4/>
+		<reserved5/>
+		<reserved6><![CDATA[Pixels]]></reserved6>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+	<class>
+		<platform>COMMENT</platform>
+		<uniqueid>RESERVED</uniqueid>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname><![CDATA[cats_combobox]]></objname>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+</VFPData>

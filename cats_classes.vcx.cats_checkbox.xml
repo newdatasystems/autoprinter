@@ -1,0 +1,86 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vcx_schema.xsd">
+	<class>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0T50WKS28</uniqueid>
+		<class><![CDATA[checkbox]]></class>
+		<classloc/>
+		<baseclass><![CDATA[checkbox]]></baseclass>
+		<objname><![CDATA[cats_checkbox]]></objname>
+		<parent/>
+		<properties><![CDATA[Height = 17
+Width = 60
+Alignment = 0
+BackStyle = 0
+Caption = "Check1"
+bcurrentstate = .F.
+bthreestatemode = .F.
+Name = "cats_checkbox"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Init
+BINDEVENT(this,'InteractiveChange',this,'OnInteractiveChange')
+this.bCurrentState = this.Value
+ENDPROC
+PROCEDURE KeyPress
+LPARAMETERS nKeyCode, nShiftAltCtrl
+IF nKeyCode = 13
+	KEYBOARD '{123}TAB}'
+	NODEFAULT
+ENDIF
+ENDPROC
+PROCEDURE oninteractivechange
+IF this.bThreeStateMode
+	IF VARTYPE(this.Value)='N'
+		IF this.bCurrentState = 1
+			this.Value = 2
+		ENDIF
+	ELSE 
+		IF !ISNULL(this.bCurrentState) AND this.bCurrentState
+			this.Value = null 
+		ENDIF
+	ENDIF
+ENDIF
+
+this.bCurrentState = this.Value
+ENDPROC
+]]></methods>
+		<ole/>
+		<ole2/>
+		<reserved1><![CDATA[Class]]></reserved1>
+		<reserved2><![CDATA[1]]></reserved2>
+		<reserved3><![CDATA[bcurrentstate
+bthreestatemode
+*oninteractivechange 
+]]></reserved3>
+		<reserved4/>
+		<reserved5/>
+		<reserved6><![CDATA[Pixels]]></reserved6>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+	<class>
+		<platform>COMMENT</platform>
+		<uniqueid>RESERVED</uniqueid>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname><![CDATA[cats_checkbox]]></objname>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+</VFPData>

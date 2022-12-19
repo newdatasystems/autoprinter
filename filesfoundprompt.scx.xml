@@ -1,0 +1,313 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="scx_schema.xsd">
+	<form>
+		<platform>COMMENT</platform>
+		<uniqueid>Screen</uniqueid>
+		<timestamp>0</timestamp>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname/>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1><![CDATA[VERSION =   3.00]]></reserved1>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_1K710EUHH</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[dataenvironment]]></class>
+		<classloc/>
+		<baseclass><![CDATA[dataenvironment]]></baseclass>
+		<objname><![CDATA[Dataenvironment]]></objname>
+		<parent/>
+		<properties><![CDATA[Top = 0
+Left = 0
+Width = 0
+Height = 0
+DataSource = .NULL.
+Name = "Dataenvironment"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2><![CDATA[1]]></reserved2>
+		<reserved3/>
+		<reserved4><![CDATA[1]]></reserved4>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_1K710EUHI</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[form]]></class>
+		<classloc/>
+		<baseclass><![CDATA[form]]></baseclass>
+		<objname><![CDATA[frmFilesFound]]></objname>
+		<parent/>
+		<properties><![CDATA[Height = 215
+Width = 380
+Desktop = .T.
+ShowWindow = 1
+DoCreate = .T.
+AutoCenter = .T.
+BorderStyle = 1
+Caption = "Found Matching Files"
+ControlBox = .F.
+MaxButton = .F.
+MinButton = .F.
+WindowType = 1
+AlwaysOnTop = .T.
+AllowOutput = .F.
+nreturn = 0
+Name = "frmFilesFound"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Init
+LPARAMETERS taFileList
+EXTERNAL ARRAY taFileList
+
+LOCAL lnFileCount,lcFileList,lnStep
+lnFileCount = ALEN(taFileList,1)
+
+this.edtText.Value = ;
+	TRAN(lnFileCount)+' matching file'+IIF(m.lnFileCount>1,'s','')+;
+	' already exist in the target directory.'+CHR(13)+;
+	'What would you like to do with '+IIF(m.lnFileCount>1,'these files','this file')+'?'
+
+lcFileList = ''
+FOR lnStep = 1 TO lnFileCount
+	lcFileList = lcFileList + ',' + taFileList[lnStep,1]
+ENDFOR 
+
+this.lstFiles.RowSource = SUBSTR(lcFileList,2)
+this.lstFiles.RowSourceType = 1
+ENDPROC
+PROCEDURE Unload
+RETURN thisform.nReturn
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3><![CDATA[nreturn
+]]></reserved3>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_1K710EUHJ</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_button]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[commandbutton]]></baseclass>
+		<objname><![CDATA[cmdPrint]]></objname>
+		<parent><![CDATA[frmFilesFound]]></parent>
+		<properties><![CDATA[Top = 188
+Left = 66
+Caption = "Print"
+Name = "cmdPrint"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Click
+thisform.nReturn = 1
+thisform.Release()
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_1K710EUHK</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_button]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[commandbutton]]></baseclass>
+		<objname><![CDATA[cmdDelete]]></objname>
+		<parent><![CDATA[frmFilesFound]]></parent>
+		<properties><![CDATA[Top = 188
+Left = 149
+Caption = "Delete"
+Name = "cmdDelete"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Click
+thisform.nReturn = 2
+thisform.Release()
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_1K710EUHL</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_button]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[commandbutton]]></baseclass>
+		<objname><![CDATA[cmdCancel]]></objname>
+		<parent><![CDATA[frmFilesFound]]></parent>
+		<properties><![CDATA[Top = 188
+Left = 232
+Cancel = .T.
+Caption = "Cancel"
+Name = "cmdCancel"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Click
+thisform.Release()
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_1K710EUHR</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_editbox]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[editbox]]></baseclass>
+		<objname><![CDATA[edtText]]></objname>
+		<parent><![CDATA[frmFilesFound]]></parent>
+		<properties><![CDATA[FontSize = 11
+BackStyle = 0
+BorderStyle = 0
+Height = 56
+Left = 10
+ReadOnly = .T.
+ScrollBars = 0
+Top = 5
+Width = 360
+Name = "edtText"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_2MG0PQA3N</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_listbox]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[listbox]]></baseclass>
+		<objname><![CDATA[lstFiles]]></objname>
+		<parent><![CDATA[frmFilesFound]]></parent>
+		<properties><![CDATA[Height = 120
+Left = 10
+Top = 64
+Width = 360
+Name = "lstFiles"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>COMMENT</platform>
+		<uniqueid>RESERVED</uniqueid>
+		<timestamp>0</timestamp>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname/>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+</VFPData>

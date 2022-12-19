@@ -1,0 +1,909 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="scx_schema.xsd">
+	<form>
+		<platform>COMMENT</platform>
+		<uniqueid>Screen</uniqueid>
+		<timestamp>0</timestamp>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname/>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1><![CDATA[VERSION =   3.00]]></reserved1>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I0Z</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[dataenvironment]]></class>
+		<classloc/>
+		<baseclass><![CDATA[dataenvironment]]></baseclass>
+		<objname><![CDATA[Dataenvironment]]></objname>
+		<parent/>
+		<properties><![CDATA[Top = 0
+Left = 0
+Width = 0
+Height = 0
+DataSource = .NULL.
+Name = "Dataenvironment"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2><![CDATA[1]]></reserved2>
+		<reserved3/>
+		<reserved4><![CDATA[1]]></reserved4>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I10</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[form]]></class>
+		<classloc/>
+		<baseclass><![CDATA[form]]></baseclass>
+		<objname><![CDATA[frmAutoPrint]]></objname>
+		<parent/>
+		<properties><![CDATA[Height = 350
+Width = 450
+ShowWindow = 2
+DoCreate = .T.
+ShowTips = .T.
+AutoCenter = .T.
+Caption = "CATS Automatic Printing"
+MaxButton = .F.
+MinButton = .F.
+MinHeight = 250
+MinWidth = 350
+WindowType = 1
+Name = "frmAutoPrint"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Activate
+this.TestReadiness()
+ENDPROC
+PROCEDURE Error
+LPARAMETERS tnError, tcMethod, tnLine
+LOCAL lcCaption,lcMessage,lnOption
+
+lcCaption = 'Recorded Error #'+TRANSFORM(tnError)
+
+lcMessage = ;
+	SPACE(2)+MESSAGE() + CHR(13) + ;
+	SPACE(2)+MESSAGE(1) + CHR(13) + ;
+	SPACE(2)+'In '+UPPER(tcMethod)+' on line '+TRANSFORM(tnLine)
+
+this.plog(lcCaption,.t.)
+this.plog(' - '+lcMessage)
+
+IF tnError = 1705 && Error: file access is denied
+	RETURN 
+ENDIF 
+
+IF MESSAGEBOX(lcMessage+CHR(13)+'Continue?',20,lcCaption) = 7 && No (Don't Continue)
+	thisform.bReturndataobj = .f.
+	thisform.Release()
+ENDIF 
+ENDPROC
+PROCEDURE findfilestoprint
+LOCAL laFiles[1],lnTotalCount,i,lcFileName,lcSkeleton
+
+thisform.tmrMain.Enabled = .f.
+
+lnTotalCount = this.ListMatchingFiles(@laFiles)
+
+IF lnTotalCount>0
+	this.plog('['+TTOC(DATETIME())+'] Found '+TRANSFORM(lnTotalCount)+' Matching Files')
+
+	FOR i = 1 TO lnTotalCount
+		IF laFiles[i,2]=0 && check file size
+			LOOP 
+		ENDIF 
+		lcFileName = ADDBS(this.txtDirectory.Value)+laFiles[i,1]
+		this.PrintFile(lcFileName)
+		DELETE FILE (lcFileName)
+	ENDFOR 
+ENDIF 
+thisform.tmrMain.Enabled = .t.
+ENDPROC
+PROCEDURE Init
+this.Icon = 'autoprinter.ico'
+IF VARTYPE(poDataObj)='O'
+	this.txtDirectory.Value = poDataObj.Directory
+	this.txtPrinter.Value = poDataObj.Printer
+	this.txtUserID.Value = poDataObj.UserID
+	this.txtCompany.Value = poDataObj.Company
+	this.TestReadiness()
+ENDIF 
+DECLARE INTEGER SetForegroundWindow IN User32.dll Integer
+SetForegroundWindow(this.HWnd)
+IF FILE('autoprint.ico')
+	this.Icon = "Autoprint.ICO"
+ENDIF 
+ENDPROC
+PROCEDURE listmatchingfiles
+PARAMETERS taArray
+LOCAL lcSkeleton,lnCount
+lcSkeleton = ADDBS(this.txtDirectory.Value)
+lcSkeleton = lcSkeleton + IIF(EMPTY(this.txtCompany.Value),'*',this.txtCompany.Value)
+lcSkeleton = lcSkeleton + '_'+this.txtUserID.Value+'_*.fle'
+
+lnCount= ADIR(taArray,lcSkeleton)
+
+RETURN lnCount
+
+ENDPROC
+PROCEDURE plog
+PARAMETERS tcString,tbPrintTime
+LOCAL lnOldStart
+
+WITH this.edtPrintLog
+	.Value = .Value +CHR(13)+CHR(10)
+	IF tbPrintTime
+		.Value = .Value + '['+TTOC(DATETIME())+']'
+	ENDIF 
+	.Value = .Value + tcString
+ENDWITH 
+ENDPROC
+PROCEDURE printfile
+lpARAMETERS tcFileName
+this.plog('Printing: '+tcFileName,.t.)
+DO DocPrinter WITH thisform.txtPrinter.Value,m.tcFileName,'CATS Autoprint: '+JUSTSTEM(m.tcFileName)
+ENDPROC
+PROCEDURE startscan
+IF !this.TestReadiness()
+	RETURN 
+ENDIF 
+LOCAL laFiles[1],lnTotalCount,lcMessage,i,lcFileName
+STORE .f. to thisform.txtUserID.Enabled,;
+	thisform.txtDirectory.Enabled,;
+	thisform.txtPrinter.Enabled,;
+	thisform.txtCompany.Enabled,;
+	thisform.cmdDirLookup.Enabled,thisform.cmdPrinterLookup.Enabled
+	
+this.plog(' Print File Scan Started :',.t.)
+this.plog('  - User: '+IIF(!EMPTY(thisform.txtCompany.Value),thisform.txtCompany.Value+'_','')+thisform.txtUserID.Value)
+this.plog('  - Directory: '+thisform.txtDirectory.Value)
+this.plog('  - Printer: '+thisform.txtPrinter.Value)
+
+* we have to make sure that we don't just print 	
+lnTotalCount = thisform.ListMatchingFiles(@laFiles)
+IF lnTotalCount > 0
+	LOCAL lnResult
+	DO FORM FilesFoundPrompt WITH laFiles TO lnResult
+	DO case
+		CASE m.lnResult = 1 && Print existing files
+			* print the pre-existing files
+			this.FindFilesToPrint()
+		CASE m.lnResult = 2 && Delete existing files
+			this.plog('Deleting pre-existing files')
+			* delete the pre-existing files
+			FOR i = 1 TO lnTotalCount
+				lcFile = ADDBS(thisform.txtDirectory.Value)+laFiles[i,1]
+				this.plog('Deleting File: '+lcFile)
+				DELETE FILE (lcFile)
+			ENDFOR 
+		OTHERWISE
+			* cancel the operation
+			this.plog('User Canceled',.t.)
+			this.StopScan()
+			RETURN 
+	ENDCASE 
+*!*		LOCAL loMsgBox,lcMessage
+*!*		lcMessage = TRAN(m.lnTotalCount)+' matching file'+IIF(m.lnTotalCount>1,'s','')
+*!*		loMsgBox = MyMessageboxSettings(m.lcMessage+' already exist in the target directory.'+CHR(13)+;
+*!*			'What would you like to do with these files?',.f.,'Found Matching Files')
+*!*		loMsgBox.IconSrc = this.Icon
+*!*		loMsgBox.AddButtons('Print','Delete','Cancel') 
+*!*		loMsgBox.OpenForm(.t.)
+*!*		DO case
+*!*			CASE loMsgBox.Result.Value = 1
+*!*				* print the pre-existing files
+*!*				this.FindFilesToPrint()
+*!*			CASE loMsgBox.Result.Value = 2
+*!*				this.plog('Deleting pre-existing files')
+*!*				* delete the pre-existing files
+*!*				FOR i = 1 TO lnTotalCount
+*!*					IF laFiles[i,3] < DATE()-7 && print files that seem new
+*!*						lcFile = ADDBS(thisform.txtDirectory.Value)+laFiles[i,1]
+*!*						DELETE FILE (lcFile)
+*!*					ENDIF 
+*!*				ENDFOR 
+*!*			CASE loMsgBox.Result.Value = 3
+*!*				* cancel the operation
+*!*				this.plog('User Canceled',.t.)
+*!*				this.StopScan()
+*!*				RETURN 
+*!*		ENDCASE 
+ENDIF 
+	
+this.cmdStartStop.Caption='Stop'
+thisform.FindFilesToPrint()
+thisform.tmrMain.Enabled = .t.  && Timer is the last thing to be enabled
+
+ENDPROC
+PROCEDURE stopscan
+thisform.tmrMain.Enabled = .f.
+STORE .t. to thisform.txtUserID.Enabled,;
+	thisform.txtDirectory.Enabled,;
+	thisform.txtPrinter.Enabled,;
+	thisform.txtCompany.Enabled,;
+	thisform.cmdDirLookup.Enabled,thisform.cmdPrinterLookup.Enabled
+	
+
+this.plog('Print File Scan Stopped',.t.)
+this.cmdStartStop.Caption='Start'
+
+ENDPROC
+PROCEDURE testreadiness
+this.cmdStartStop.Enabled = .f.
+if !EMPTY(this.txtDirectory.Value) ;
+	AND !EMPTY(this.txtPrinter.Value) AND DIRECTORY(this.txtDirectory.Value)
+	TRY 
+		SET PRINTER TO NAME (this.txtPrinter.Value)
+		this.cmdStartStop.Enabled = .t.
+	CATCH TO loException
+		MESSAGEBOX( 'Invalid Printer'+CHR(13)+loException.Message)
+	ENDTRY 
+ENDIF 
+RETURN this.cmdStartStop.Enabled 
+ENDPROC
+PROCEDURE Unload
+IF !this.bReturndataobj
+	poDataObj = .f.
+ENDIF 
+CLEAR EVENTS
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3><![CDATA[breturndataobj
+*testreadiness tests the readiness of the form
+*findfilestoprint finds files associated with this user in the specified directory and prints them
+*printfile copies the file to the specified printer
+*listmatchingfiles 
+*plog prints a string to the Print Log
+*startscan 
+*stopscan 
+]]></reserved3>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I11</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_textbox]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[textbox]]></baseclass>
+		<objname><![CDATA[txtPrinter]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[Anchor = (2+8)
+Format = "T"
+Height = 21
+Left = 5
+TabIndex = 3
+ToolTipText = "The Name of the printer where the files will be printed"
+Top = 74
+Width = 411
+Name = "txtPrinter"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE LostFocus
+thisform.TestReadiness()
+ENDPROC
+PROCEDURE ProgrammaticChange
+thisform.TestReadiness()
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I12</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_button]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[commandbutton]]></baseclass>
+		<objname><![CDATA[cmdPrinterLookup]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[Top = 74
+Left = 422
+Height = 21
+Width = 23
+Anchor = 8
+Caption = "..."
+TabIndex = 4
+Name = "cmdPrinterLookup"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Click
+LOCAL lcNewVal
+*!*	DO FORM selprinter WITH thisform.txtPrinter.Value TO lcNewVal
+TRY 
+SET PRINTER TO NAME (thisform.txtPrinter.Value)
+CATCH
+ENDTRY 
+lcNewVal = GETPRINTER()
+IF !EMPTY(lcNewVal)
+	thisform.txtPrinter.Value = lcNewVal
+ENDIF 
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I13</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_label]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[label]]></baseclass>
+		<objname><![CDATA[Cats_label1]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[FontBold = .T.
+Caption = "Printer:"
+Height = 17
+Left = 5
+Top = 58
+Width = 49
+TabIndex = 9
+Name = "Cats_label1"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I14</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_textbox]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[textbox]]></baseclass>
+		<objname><![CDATA[txtDirectory]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[Anchor = (2+8)
+Format = "T"
+Height = 21
+Left = 5
+TabIndex = 5
+ToolTipText = "The directory to scan for new files"
+Top = 118
+Width = 411
+Name = "txtDirectory"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE InteractiveChange
+thisform.TestReadiness()
+ENDPROC
+PROCEDURE LostFocus
+IF !EMPTY(this.Value) AND !DIRECTORY(this.Value)
+	MESSAGEBOX('Directory "'+this.Value+'" does not exist.',48,'Invalid Directory')
+	NODEFAULT
+ENDIF 
+ENDPROC
+PROCEDURE ProgrammaticChange
+this.InteractiveChange()
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I15</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_button]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[commandbutton]]></baseclass>
+		<objname><![CDATA[cmdDirLookup]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[Top = 118
+Left = 422
+Height = 21
+Width = 23
+Anchor = 8
+Caption = "..."
+TabIndex = 6
+Name = "cmdDirLookup"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Click
+LOCAL lcNewValue
+
+lcNewValue = GETDIR(FULLPATH(thisform.txtDirectory.Value),'Select the Directory to scan for new printer files.','Select Directory',16+32+64)
+IF !EMPTY(lcNewValue)
+	thisform.txtDirectory.Value = lcNewValue
+ENDIF 
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I16</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_label]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[label]]></baseclass>
+		<objname><![CDATA[Cats_label2]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[FontBold = .T.
+Caption = "Scanning In Directory:"
+Height = 17
+Left = 5
+Top = 100
+Width = 144
+TabIndex = 10
+Name = "Cats_label2"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I17</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_editbox]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[editbox]]></baseclass>
+		<objname><![CDATA[edtPrintLog]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[FontName = "Courier New"
+FontSize = 8
+Anchor = (1+2+4+8)
+Height = 153
+Left = 5
+ReadOnly = .T.
+ScrollBars = 2
+TabIndex = 11
+TabStop = .F.
+Top = 165
+Width = 440
+Name = "edtPrintLog"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE ProgrammaticChange
+this.SelStart = LEN(this.Text)
+this.SelLength = 0
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I19</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_button]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[commandbutton]]></baseclass>
+		<objname><![CDATA[cmdClose]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[Top = 322
+Left = 364
+Anchor = (4+8)
+Cancel = .T.
+Caption = "Close"
+Default = .T.
+TabIndex = 8
+ToolTipText = "Exit the program"
+Name = "cmdClose"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Click
+*!*	LOCAL lnChoice
+*!*	lnChoice = 7 && defaults to NO
+*!*	IF thisform.cmdStartStop.Enabled
+*!*		lnChoice = MESSAGEBOX('Save Settings For Use Later?',35+256,'Closing CATS Automatic Printing')
+*!*	ENDIF 
+*!*	DO case
+*!*		CASE lnChoice = 2 && Cancel
+*!*			RETURN 
+*!*		CASE lnChoice = 6 && Yes
+		thisform.StopScan
+		thisform.bReturnDataObj = .t.
+		poDataObj = CREATEOBJECT('CUstom')
+		WITH poDataObj
+			.addproperty('Company',thisform.txtCompany.Value)
+			.addproperty('UserID',thisform.txtUserID.Value)
+			.addproperty('Printer',thisform.txtPrinter.Value)
+			.addproperty('Directory',thisform.txtDirectory.Value)
+		ENDWITH 
+*!*	ENDCASE 
+thisform.Release()
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I1A</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_button]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[commandbutton]]></baseclass>
+		<objname><![CDATA[cmdStartStop]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[Top = 23
+Left = 236
+Height = 23
+Width = 102
+Cancel = .T.
+Caption = "Start Scan"
+TabIndex = 7
+ToolTipText = "Starts/Stops the scanning process"
+Name = "cmdStartStop"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Click
+IF thisform.tmrMain.Enabled
+	thisform.StopScan()
+ELSE
+	thisform.StartScan()
+ENDIF 
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I1B</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_label]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[label]]></baseclass>
+		<objname><![CDATA[Cats_label3]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[FontBold = .T.
+Caption = "Print Log:"
+Height = 17
+Left = 5
+Top = 148
+Width = 144
+TabIndex = 12
+Name = "Cats_label3"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I0Z</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_textbox]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[textbox]]></baseclass>
+		<objname><![CDATA[txtCompany]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[Format = "!T"
+Height = 21
+Left = 5
+MaxLength = 3
+TabIndex = 1
+ToolTipText = "Enter the 3-character CATS Company Code"
+Top = 25
+Width = 45
+Name = "txtCompany"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE LostFocus
+thisform.TestReadiness()
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M5I10</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_label]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[label]]></baseclass>
+		<objname><![CDATA[Cats_label4]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[FontBold = .T.
+Caption = "Company:"
+Height = 17
+Left = 5
+Top = 6
+Width = 60
+TabIndex = 13
+Name = "Cats_label4"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0M82MO</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[timer]]></class>
+		<classloc/>
+		<baseclass><![CDATA[timer]]></baseclass>
+		<objname><![CDATA[tmrMain]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[Top = 321
+Left = 5
+Height = 23
+Width = 23
+Enabled = .F.
+Interval = 10000
+Name = "tmrMain"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Timer
+thisform.FindFilesToPrint()
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0SJ1BK</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_textbox]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[textbox]]></baseclass>
+		<objname><![CDATA[txtUserID]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[Format = "!T"
+Height = 21
+Left = 121
+MaxLength = 3
+TabIndex = 2
+ToolTipText = "Enter the 3-character CATS User ID"
+Top = 25
+Width = 45
+Name = "txtUserID"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE LostFocus
+thisform.TestReadiness()
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_12S0SJ1BU</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_label]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[label]]></baseclass>
+		<objname><![CDATA[Cats_label5]]></objname>
+		<parent><![CDATA[frmAutoPrint]]></parent>
+		<properties><![CDATA[FontBold = .T.
+Caption = "User ID:"
+Height = 17
+Left = 122
+Top = 6
+Width = 49
+TabIndex = 14
+Name = "Cats_label5"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>COMMENT</platform>
+		<uniqueid>RESERVED</uniqueid>
+		<timestamp>0</timestamp>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname/>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+</VFPData>

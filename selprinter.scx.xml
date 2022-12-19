@@ -1,0 +1,565 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="scx_schema.xsd">
+	<form>
+		<platform>COMMENT</platform>
+		<uniqueid>Screen</uniqueid>
+		<timestamp>0</timestamp>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname/>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1><![CDATA[VERSION =   3.00]]></reserved1>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0LO0TDKBN</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[dataenvironment]]></class>
+		<classloc/>
+		<baseclass><![CDATA[dataenvironment]]></baseclass>
+		<objname><![CDATA[Dataenvironment]]></objname>
+		<parent/>
+		<properties><![CDATA[Top = 0
+Left = 0
+Width = 0
+Height = 0
+DataSource = .NULL.
+Name = "Dataenvironment"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2><![CDATA[1]]></reserved2>
+		<reserved3/>
+		<reserved4><![CDATA[1]]></reserved4>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0LO0TDKBO</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[form]]></class>
+		<classloc/>
+		<baseclass><![CDATA[form]]></baseclass>
+		<objname><![CDATA[frmSelPrinter]]></objname>
+		<parent/>
+		<properties><![CDATA[Top = 0
+Left = 0
+Height = 120
+Width = 520
+DoCreate = .T.
+BorderStyle = 2
+Caption = "Select Printer"
+ControlBox = .F.
+KeyPreview = .T.
+WindowType = 1
+AllowOutput = .F.
+cprnname = 
+Name = "frmSelPrinter"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE abbreviateprintername
+LPARAMETERS tcPrinterName,tnMaxLength
+LOCAL lcStem,lnPathLength,lcFinalString
+lcFinalString = ''
+IF LEN(ALLTRIM(tcPrinterName))<=tnMaxLength
+	RETURN tcPrinterName
+ENDIF 
+
+lcStem = JUSTSTEM(tcPrinterName)
+lnPathLength = tnMaxLength - LEN(lcStem) - 3
+IF lnPathLength>0
+	lcFinalString = LEFT(tcPrinterName,lnPathLength)+'...'
+ENDIF 
+RETURN lcFinalString + lcStem
+
+ENDPROC
+PROCEDURE Init
+* initializes the form by looking for the previous sessions
+* list of printers or building a new list of printers and
+* settings the combo-box's list to that list
+*
+* NOTE: the user can refresh the list by clicking on the Refresh button
+*
+* ==PARAMS==
+* lcCurrentVal - the current value for the combo-box
+* ==PARAMS==
+PARAMETERS tcCurrentVal
+
+this.cPrnName=IIF(varTYPE(tcCurrentVal)='C',tcCurrentVal,'')
+
+IF VARTYPE(pub_bScanNetworkForPrinters)='L'
+	this.cntMain.chkScanNetwork.Value = IIF(pub_bScanNetworkForPrinters,1,0)
+ELSE
+	PUBLIC pub_bScanNetworkForPrinters
+ENDIF 
+
+* create the list of printers
+this.UpdateList(.f.)
+
+
+ENDPROC
+PROCEDURE KeyPress
+LPARAMETERS nKeyCode, nShiftAltCtrl
+DO case
+	CASE nKeyCode=-1   && F2 - Save
+		this.cmdSave.Click()
+	CASE nKeyCode=27   && ESC - Cancel
+		this.cmdCancel.Click()
+	CASE nKeyCode=-2   && F3 - Refresh
+		this.cmdRefresh.Click()
+ENDCASE
+
+ENDPROC
+PROCEDURE Unload
+* unload the form, close any used tables and return the selection
+USE IN SELECT('netprinters')
+USE IN SELECT('netshares')
+RETURN this.cPrnName
+
+ENDPROC
+PROCEDURE updatelist
+PARAMETERS tbForceRefresh
+* updates the list of printers using GetAllShares
+LOCAL lcOldSafety,lcOldSel,lcOldSafety,lcPrinterName,lcLocalName,lnAt
+*!*	LOCAL loPortList,loPort
+LOCAL loShell,loPrinterCollection,lcNetworkPrintersTable,lcNetworkPrintersAlias
+lnOldSEl = SELECT()
+lcOldSafety=SET("Safety")
+SET SAFETY OFF
+
+CREATE CURSOR netprinters (Name c(80),RemoteName m)
+loShell = CREATEOBJECT('WScript.Network')
+
+* get the list of shares
+IF pub_bScanNetworkForPrinters
+	lcNetworkPrintersTable = ADDBS(TempLocationPath())+loShell.ComputerName+'_NetworkPrinters.dbf'
+	lcNetworkPrintersAlias = 'NetPrinters'+SYS(2015)
+	IF !FILE(lcNetworkPrintersTable ) OR tbForceRefresh
+		WAIT WINDOW "Scanning Network For Shared Printers" NOWAIT
+*		CREATE TABLE (lcNetworkPrintersTable) (RemoteName m)
+		DO getallShares WITH 'netshares',2,2,3
+		* copy them to the storage table
+		SELECT localnam,remotnam FROM netshares INTO TABLE (lcNetworkPrintersTable) ;
+			WHERE netshares.Useage='CONNECTABLE' 
+		* close the newly created table
+		USE  
+		* close the netshares cursor
+		USE IN NetShares
+
+		* list active ports
+*!*			WAIT WINDOW "Scanning Local Ports" NOWAIT
+*!*			loPortList=EnumPorts()
+*!*			IF loPortList.ListPorts()=0
+*!*				FOR i=1 TO loPortList.getCount()
+*!*					loPort=loPortList.getPort(i)
+*!*					IF UPPER(loPort.cPortName)#"COM" AND UPPER(loPort.cPortName)#"FILE"
+*!*						INSERT INTO netprinters VALUES ("Local Port: "+SUBSTR(loPort.cPortName,1,RAT(':',loPort.cPortName)-1))
+*!*					ENDIF
+*!*				ENDFOR
+	ENDIF
+
+	USE (lcNetworkPrintersTable) IN 0 ALIAS (lcNetworkPrintersAlias)
+
+	SELECT (lcNetworkPrintersAlias)
+	SCAN
+		lcPrinterName = ALLTRIM(RemotNam)
+		lcLocalName = IIF(EMPTY(LocalNam),thisform.Abbreviateprintername(lcPrinterName,80),ALLTRIM(LocalNam))
+		INSERT INTO NetPrinters (Name,RemoteName) VALUES (lcLocalName,lcPrinterName)
+	ENDSCAN
+	USE IN (lcNetworkPrintersAlias)
+
+	WAIT WINDOW "Network Scan Complete" NOWAIT 
+ENDIF 
+
+* get list of installed printers
+loPrinterCollection = loShell.EnumPrinterConnections
+FOR i = 1 TO loPrinterCollection.Length STEP 2
+	lcLocalName = thisform.Abbreviateprintername(loPrinterCollection.Item(i),60)
+	lcPrinterName = loPrinterCollection.Item(i-1)
+	lnAt = AT(':',lcPrinterName)
+	DO case
+		CASE lnAt > 0
+			lcPrinterName = LEFT(lcPrinterName,lnAt-1)
+			lcLocalName = lcPrinterName+': '+ lcLocalName
+		CASE lcLocalName # lcPrinterName
+			lcLocalName = lcPrinterName+' ('+lcLocalName+')'
+		OTHERWISE
+			lcLocalName = "Installed: "+lcLocalName
+	ENDCASE 
+	INSERT INTO NetPrinters (Name,RemoteName) VALUES (lcLocalName,lcPrinterName)
+ENDFOR  
+
+GO TOP IN NetPrinters
+IF !EOF()
+	thisform.cntMain.cmbPrnName.DisplayValue = ;
+		IIF(EMPTY(thisform.cPrnName),Netprinters.Name,thisform.cPrnName)
+ENDIF 
+
+* update the combo-box
+this.cntMain.cmbPrnName.RowSourceType=6
+this.cntMain.cmbPrnName.RowSource='NetPrinters.Name'
+SET SAFETY &lcOldSafety
+SELECT (lnOldSel)
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3><![CDATA[cprnname the name of the printer selected
+*updatelist queries network for printers and updates list
+*abbreviateprintername abbreviates a long printer name to fit into the space provided
+]]></reserved3>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0LO0TDKBP</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[container]]></class>
+		<classloc/>
+		<baseclass><![CDATA[container]]></baseclass>
+		<objname><![CDATA[cntMain]]></objname>
+		<parent><![CDATA[frmSelPrinter]]></parent>
+		<properties><![CDATA[Top = 9
+Left = 10
+Width = 500
+Height = 71
+SpecialEffect = 2
+Name = "cntMain"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0ZX0PA76X</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[cats_checkbox]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[checkbox]]></baseclass>
+		<objname><![CDATA[chkScanNetwork]]></objname>
+		<parent><![CDATA[frmSelPrinter.cntMain]]></parent>
+		<properties><![CDATA[Top = 45
+Left = 54
+Height = 17
+Width = 301
+Caption = "Scan Entire Network (May Take Several Seconds)"
+Name = "chkScanNetwork"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE InteractiveChange
+pub_bScanNetworkForPrinters = (this.Value=1)
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0ZX0SUPVX</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[combobox]]></class>
+		<classloc/>
+		<baseclass><![CDATA[combobox]]></baseclass>
+		<objname><![CDATA[cmbPrnName]]></objname>
+		<parent><![CDATA[frmSelPrinter.cntMain]]></parent>
+		<properties><![CDATA[Height = 26
+Left = 55
+Style = 0
+ToolTipText = "Select the printer from this list or enter printer name if known"
+Top = 11
+Width = 430
+Format = "T"
+Name = "cmbPrnName"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0ZX0SUPVY</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[label]]></class>
+		<classloc/>
+		<baseclass><![CDATA[label]]></baseclass>
+		<objname><![CDATA[Label1]]></objname>
+		<parent><![CDATA[frmSelPrinter.cntMain]]></parent>
+		<properties><![CDATA[BackStyle = 0
+Caption = "Name:"
+Height = 17
+Left = 12
+Top = 16
+Width = 41
+Name = "Label1"
+]]></properties>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0LO0TDKBT</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[commandbutton]]></class>
+		<classloc/>
+		<baseclass><![CDATA[commandbutton]]></baseclass>
+		<objname><![CDATA[cmdRefresh]]></objname>
+		<parent><![CDATA[frmSelPrinter]]></parent>
+		<properties><![CDATA[Top = 89
+Left = 10
+Height = 27
+Width = 84
+Caption = "Refresh List"
+ToolTipText = "Update list of Network and Installed Printers"
+Name = "cmdRefresh"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Click
+THISFORM.UpdateList(.t.)
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0LO0TDKBN</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[commandbutton]]></class>
+		<classloc/>
+		<baseclass><![CDATA[commandbutton]]></baseclass>
+		<objname><![CDATA[cmdSave]]></objname>
+		<parent><![CDATA[frmSelPrinter]]></parent>
+		<properties><![CDATA[Top = 89
+Left = 342
+Height = 27
+Width = 84
+Caption = "Continue"
+ToolTipText = "Use the currently selected printer"
+Name = "cmdSave"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Click
+LOCAL lnOldSel
+WITH thisform
+	.cPrnName = ALLTRIM(.cntMain.cmbPrnName.Text)
+	lnOldSel = SELECT()
+	SELECT NetPrinters
+	LOCATE FOR NetPrinters.Name = PADR(.cPrnName,LEN(NetPrinters.Name))
+	IF FOUND()
+		.cPrnName = ALLTRIM(NetPrinters.RemoteName)
+	ENDIF 
+	SELECT (lnOldSel)
+	.Release
+ENDWITH
+
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0LO0TDKBV</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[commandbutton]]></class>
+		<classloc/>
+		<baseclass><![CDATA[commandbutton]]></baseclass>
+		<objname><![CDATA[cmdCancel]]></objname>
+		<parent><![CDATA[frmSelPrinter]]></parent>
+		<properties><![CDATA[Top = 89
+Left = 426
+Height = 27
+Width = 84
+Caption = "Cancel"
+ToolTipText = "Cancel selection"
+Name = "cmdCancel"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Click
+thisform.release
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0ZX0SR77H</uniqueid>
+		<timestamp>0</timestamp>
+		<class><![CDATA[commandbutton]]></class>
+		<classloc/>
+		<baseclass><![CDATA[commandbutton]]></baseclass>
+		<objname><![CDATA[cmdProperties]]></objname>
+		<parent><![CDATA[frmSelPrinter]]></parent>
+		<properties><![CDATA[Top = 89
+Left = 94
+Height = 27
+Width = 89
+Caption = "Properties..."
+ToolTipText = "Display Printer Properties dialog for selected printer"
+Name = "cmdProperties"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Click
+LOCAL lcOldPrinter,lcSelectionName
+
+lcSelectionName = ALLTRIM(thisform.cntMain.cmbPrnName.Value)
+IF !EMPTY(lcSelectionName)
+	lnAt = AT(': ',lcSelectionName)
+	IF lnAt>0
+		lcSelectionName = SUBSTR(lcSelectionName,lnAt+2)
+	ENDIF 
+
+	SET PRINTER TO NAME (lcSelectionName)
+	* display the printer properties dialog
+	SYS(1037)
+
+	SET PRINTER TO 
+ENDIF 
+ENDPROC
+]]></methods>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+	<form>
+		<platform>COMMENT</platform>
+		<uniqueid>RESERVED</uniqueid>
+		<timestamp>0</timestamp>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname/>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<objcode/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</form>
+</VFPData>

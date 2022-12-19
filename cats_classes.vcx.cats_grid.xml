@@ -1,0 +1,167 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vcx_schema.xsd">
+	<class>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0T50WNL6Q</uniqueid>
+		<class><![CDATA[grid]]></class>
+		<classloc/>
+		<baseclass><![CDATA[grid]]></baseclass>
+		<objname><![CDATA[cats_grid]]></objname>
+		<parent/>
+		<properties><![CDATA[Height = 200
+Width = 320
+HighlightBackColor = 81,112,174
+HighlightStyle = 2
+Name = "cats_grid"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE DoScroll
+LPARAMETERS nDirection,nTimes
+
+IF VARTYPE(nTimes)#'N' OR nTimes <= 0
+	* default behavior
+	RETURN DODEFAULT(m.nDirection)
+ENDIF 
+
+LOCAL i
+FOR i = 1 TO m.nTimes
+	DODEFAULT(m.nDirection)
+ENDFOR 
+
+ENDPROC
+PROCEDURE fitcolumntocontrolsource
+LPARAMETERS toCol as Column
+IF VARTYPE(toCol)='N'
+	IF BETWEEN(toCol,1,this.ColumnCount)
+		toCol = this.Columns(toCol)
+	ENDIF 
+ENDIF 
+
+IF VARTYPE(toCol)='O'
+	LOCAL lnCharWidth,lcCSType,lcControlSource
+	lcControlSource = m.toCol.ControlSource
+	IF NOT EMPTY(this.RecordSource) AND USED(this.RecordSource) AND NOT '.'$lcControlSource
+		lcControlSource = this.RecordSource+'.'+lcControlSource
+	ENDIF 
+	lcCSType = TYPE(m.lcControlSource)
+	lnCharWidth = 0
+	DO case
+		CASE m.lcCSType='U'
+		CASE m.lcCSType = 'N'			
+		CASE m.lcCSType='M'
+			lnCharWidth = 4
+		CASE m.lcCSType='C'
+			* try to get a default width
+			lnCharWidth = LEN(EVAL(m.lcControlSource))
+		CASE m.lcCSType='D'
+			lnCharWidth = 10
+		CASE m.lcCSType='T'
+			lnCharWidth = IIF(SET("Hours")=12,22,19)
+		OTHERWISE
+			lnCharWidth = MAX(8,LEN(TRAN(EVAL(m.lcControlSource))))
+	*!*			lnCharWidth = LEN(TRAN(EVAL(toCol.ControlSource)))
+	ENDCASE 
+	IF m.lnCharWidth > 0
+		toCol.Width = (m.lnCharWidth+1) * FONTMETRIC(6,toCol.FontName,toCol.FontSize,IIF(toCol.FontBold,'B',''))
+	ELSE
+		toCol.AutoFit()
+	ENDIF 
+ENDIF 
+ENDPROC
+PROCEDURE safeselect
+* RETURNS: TRUE if Safe Select was used
+LPARAMETERS tcFromAlias,tcToAlias,tcLocate,tbNoGridSource
+LOCAL lbZapped,lbFirstTime
+IF VARTYPE(tcToAlias)#'C' OR EMPTY(tcToAlias)
+	tcToAlias = this.RecordSource
+ENDIF 
+
+IF !USED(m.tcFromAlias) 
+	RETURN NULL
+ENDIF 
+SELECT (m.tcFromAlias)
+* don't want to zap if the source is the same as the destination
+IF NOT UPPER(tcFromAlias) == UPPER(tcToAlias)
+	IF !USED(m.tcToAlias)
+		* destination doesn't exist (so we can do a regular select)
+		SELECT * FROM (tcFromAlias) INTO CURSOR (tcToAlias) READWRITE 
+		lbFirstTime = .t.
+	ELSE 
+		* safe select (ZAP destination, APPEND FROM source)
+		LOCAL lcOldSafety,lcAllocationID
+		lcOldSafety = SET("Safety")
+		SET SAFETY OFF
+		SELECT (m.tcToAlias)
+		ZAP 
+		APPEND FROM (DBF(m.tcFromAlias))
+		IF m.lcOldSafety = 'ON'
+			SET SAFETY ON 
+		ENDIF 
+		lbZapped = .t.
+	ENDIF 
+ENDIF 
+
+SELECT (tcToAlias)
+
+IF NOT tbNoGridSource
+	IF lbFirstTime AND EMPTY(this.RecordSource)
+		this.RecordSourceType = 1
+		this.RecordSource = m.tcToAlias
+	ENDIF
+	this.Refresh()
+ENDIF
+
+* optionally we can locate a specific record
+IF VARTYPE(m.tcLocate)='C' AND TYPE(tcLocate)='L' && AND UPPER(m.tcToAlias)==UPPER(this.RecordSource)
+	LOCATE FOR &tcLocate
+	IF !FOUND()
+		* go top
+		LOCATE 
+	ENDIF 
+	this.DoScroll(0,3)
+ELSE
+  LOCATE
+ENDIF 
+
+RETURN lbZapped
+
+ENDPROC
+]]></methods>
+		<ole/>
+		<ole2/>
+		<reserved1><![CDATA[Class]]></reserved1>
+		<reserved2><![CDATA[1]]></reserved2>
+		<reserved3><![CDATA[*safeselect 
+*fitcolumntocontrolsource 
+]]></reserved3>
+		<reserved4/>
+		<reserved5/>
+		<reserved6><![CDATA[Pixels]]></reserved6>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+	<class>
+		<platform>COMMENT</platform>
+		<uniqueid>RESERVED</uniqueid>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname><![CDATA[cats_grid]]></objname>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+</VFPData>

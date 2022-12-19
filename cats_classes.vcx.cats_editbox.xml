@@ -1,0 +1,221 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vcx_schema.xsd">
+	<class>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0T50WMTZA</uniqueid>
+		<class><![CDATA[editbox]]></class>
+		<classloc/>
+		<baseclass><![CDATA[editbox]]></baseclass>
+		<objname><![CDATA[cats_editbox]]></objname>
+		<parent/>
+		<properties><![CDATA[Height = 53
+SpecialEffect = 1
+Width = 100
+BorderColor = 128,128,128
+bundotracking = .F.
+oundomonitor = .F.
+Name = "cats_editbox"
+]]></properties>
+		<protected><![CDATA[oundomonitor
+]]></protected>
+		<methods><![CDATA[PROCEDURE doremark
+LPARAMETERS tcIdentifier
+
+DO CASE
+	CASE tcIdentifier = 'SAVE'	
+		DO memfget WITH 'Save',this.Value,''
+	CASE 'REMARK'$tcIdentifier OR 'ADDRESS'$tcIdentifier
+		LOCAL lcNewRemark,lcNewTag
+		STORE '' TO lcNewRemark,lcNewTag
+		DO memfget WITH IIF('REMARK'$tcIdentifier,'RFILE','RADDR'),lcNewRemark,lcNewTag,.t. && 'Save',thisform.edtText.Value,thisform.Caption
+		IF pub_bCancel
+			RETURN 
+		ENDIF 
+
+		IF EMPTY(this.Value) OR 'REPL'$tcIdentifier
+			this.Value = lcNewRemark
+		ELSE 
+			this.Value = LEFT(this.Value,this.SelStart)+;
+				lcNewRemark + CHR(13)+CHR(10)+;
+				SUBSTR(this.Value,this.SelStart)
+		ENDIF 
+		IF PEMSTATUS(this,'Changed',5)
+			this.Changed()
+		ENDIF
+ENDCASE
+ENDPROC
+PROCEDURE GotFocus
+EditBox::GotFocus()
+ENDPROC
+PROCEDURE Init
+IF this.bUndoTracking
+	this.StartUndoMonitor()
+ENDIF
+ENDPROC
+PROCEDURE interactivechange_undo
+IF this.bUndoTracking AND !this.ReadOnly AND this.Enabled
+	this.oUndoMonitor.InteractiveChange(this.Value,this.SelStart)
+ENDIF
+ENDPROC
+PROCEDURE KeyPress
+lparameters nKeyCode, nShiftAltCtrl
+
+* by default escape clears a note field
+IF nKeyCode = 27
+	* Eat the key
+	NODEFAULT
+ENDIF
+
+IF this.bUndoTracking AND !this.ReadOnly AND this.Enabled AND nShiftAltCtrl = 2
+	IF nKeyCode = 26
+		* Must check for Ctrl-<- which is also 26
+		DECLARE INTEGER GetKeyState in WIN32API INTEGER
+		IF GetKeyState(0x25) = 0 AND (GetKeyState(ASC('Z')) # 0 OR GetKeyState(ASC('z')) # 0)
+			WAIT WINDOW 'CTRL+Z' NOWAIT
+			this.oUndoMonitor.Undo()
+			NODEFAULT
+		ELSE
+			WAIT WINDOW 'Left Arrow' NOWAIT
+		ENDIF
+	ENDIF
+
+	*** Redo Ctrl-R
+	IF nKeyCode = 25
+		this.oUndoMonitor.Redo()
+		NODEFAULT
+	ENDIF
+ENDIF
+
+ENDPROC
+PROCEDURE programmaticchange_undo
+IF this.bUndoTracking AND this.Enabled AND !this.ReadOnly
+	this.oUndoMonitor.ProgrammaticChange(this.Value,this.SelStart)
+ENDIF
+ENDPROC
+PROCEDURE RightClick
+LOCAL lcUndoRedo,lcRemarkMode
+DEFINE POPUP EditBoxPopup SHORTCUT RELATIVE
+
+
+
+IF !this.ReadOnly
+	DEFINE BAR _MED_CUT OF EditBoxPopup PROMPT "Cu\<t" SKIP FOR this.ReadOnly
+ENDIF 
+DEFINE BAR _MED_COPY OF EditBoxPopup PROMPT "\<Copy"
+
+IF !this.ReadOnly
+	DEFINE BAR _MED_PASTE OF EditBoxPopup PROMPT "\<Paste"
+	DEFINE BAR 4 OF EditBoxPopup PROMPT "\-"
+	DEFINE BAR _MED_CLEAR OF EditBoxPopup PROMPT "\<Clear"
+ENDIF
+
+IF !EMPTY(this.Value) OR !this.ReadOnly
+	DEFINE BAR 5 OF EditBoxPopup PROMPT "\-"
+
+	DEFINE BAR 8 OF EditBoxPopup PROMPT "\<Save Remark"
+	ON SELECTION BAR 8 OF EditBoxPopup lcRemarkMode = 'SAVE'
+
+	IF !this.ReadOnly
+		DEFINE POPUP RemarkInsertTextPopup SHORTCUT RELATIVE		
+		DEFINE BAR 2 OF RemarkInsertTextPopup PROMPT "\<Remark"
+		DEFINE BAR 3 OF RemarkInsertTextPopup PROMPT "\<Address"
+		ON SELECTION BAR 2 OF RemarkInsertTextPopup lcRemarkMode = 'REMARK'
+		ON SELECTION BAR 3 OF RemarkInsertTextPopup lcRemarkMode = 'ADDRESS'
+
+		DEFINE POPUP RemarkReplaceTextPopup SHORTCUT RELATIVE		
+		DEFINE BAR 2 OF RemarkReplaceTextPopup PROMPT "\<Remark"
+		DEFINE BAR 3 OF RemarkReplaceTextPopup PROMPT "\<Address"
+		ON SELECTION BAR 2 OF RemarkReplaceTextPopup lcRemarkMode = 'REPL_REMARK'
+		ON SELECTION BAR 3 OF RemarkReplaceTextPopup lcRemarkMode = 'REPL_ADDRESS'
+	
+		DEFINE BAR 6 OF EditBoxPopup PROMPT "\<Insert"
+		ON BAR 6 OF EditBoxPopup ACTIVATE POPUP RemarkInsertTextPopup
+		DEFINE BAR 7 OF EditBoxPopup PROMPT "\<Replace"
+		ON BAR 7 OF EditBoxPopup ACTIVATE POPUP RemarkReplaceTextPopup		
+	ENDIF
+ENDIF
+
+IF !this.ReadOnly AND this.bUndoTracking
+	DEFINE BAR 12 OF EditBoxPopup PROMPT "\-"
+	DEFINE BAR 13 OF EditBoxPopup PROMPT "\<Undo" SKIP FOR !this.oUndoMonitor.CanUndo()
+	ON SELECTION BAR 13 OF EditBoxPopup lcUndoRedo = 'Undo'
+	DEFINE BAR 14 OF EditBoxPopup PROMPT "\<Redo" SKIP FOR !this.oUndoMonitor.CanRedo()
+	ON SELECTION BAR 14 OF EditBoxPopup lcUndoRedo = 'Redo'
+ENDIF
+
+
+ACTIVATE POPUP EditBoxPopup AT MROW(),MCOL()
+
+IF !EMPTY(m.lcUndoRedo)
+	IF m.lcUndoRedo = 'Undo'
+		this.oUndoMonitor.Undo()
+	ELSE
+		this.oUndoMonitor.Redo()
+	ENDIF
+ENDIF
+
+IF !EMPTY(m.lcRemarkMode)
+	this.DoRemark(m.lcRemarkMode)
+ENDIF
+ENDPROC
+PROCEDURE startundomonitor
+LPARAMETERS tcValue,tnSelStart
+IF VARTYPE(this.oUndoMonitor)#'O'
+	this.oUndoMonitor = UndoMonitor(tcValue,tnSelStart)
+ELSE
+	this.oUndoMonitor.Reset(tcValue,tnSelStart)
+ENDIF
+this.bUndoTracking = .t.
+BINDEVENT(this.oUndoMonitor,'UpdateValue',this,'UndoMonitor_UpdateValue')
+BINDEVENT(this,'InteractiveChange',this,'InteractiveChange_Undo')
+BINDEVENT(this,'ProgrammaticChange',this,'ProgrammaticChange_Undo')
+ENDPROC
+PROCEDURE undomonitor_updatevalue
+LPARAMETERS tcValue,tnSelStart
+this.Value = tcValue
+this.SelStart = tnSelStart
+ENDPROC
+]]></methods>
+		<ole/>
+		<ole2/>
+		<reserved1><![CDATA[Class]]></reserved1>
+		<reserved2><![CDATA[1]]></reserved2>
+		<reserved3><![CDATA[bundotracking
+oundomonitor
+*undomonitor_updatevalue 
+*startundomonitor 
+*interactivechange_undo 
+*programmaticchange_undo 
+*doremark 
+]]></reserved3>
+		<reserved4/>
+		<reserved5/>
+		<reserved6><![CDATA[Pixels]]></reserved6>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+	<class>
+		<platform>COMMENT</platform>
+		<uniqueid>RESERVED</uniqueid>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname><![CDATA[cats_editbox]]></objname>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+</VFPData>

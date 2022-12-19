@@ -1,0 +1,9 @@
+NUMBER:1.4.2
+BUILDTIME:12/19/22 10:58:24 AM
+COMMENT:CATS Auto Print
+COMPANY:New Data Systems, Inc
+COPYRIGHT:Copyright 2009 New Data Systems, Inc
+DESCRIPTION:automatically prints CATS transfer files from the specified directory to the specified printer
+LANGUAGE:
+PRODUCT:CATS Auto Printer
+TRADEMARK:CATS is a registered trademark of New Data Systems, Inc

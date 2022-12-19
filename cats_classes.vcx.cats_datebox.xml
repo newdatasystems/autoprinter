@@ -1,0 +1,155 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vcx_schema.xsd">
+	<class>
+		<platform>WINDOWS</platform>
+		<uniqueid>_17V0LAOFL</uniqueid>
+		<class><![CDATA[cats_textbox]]></class>
+		<classloc><![CDATA[cats_classes.vcx]]></classloc>
+		<baseclass><![CDATA[textbox]]></baseclass>
+		<objname><![CDATA[cats_datebox]]></objname>
+		<parent/>
+		<properties><![CDATA[Alignment = 3
+Value = ({123}})
+Width = 80
+Name = "cats_datebox"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE forcedate_assign
+LPARAMETERS vNewVal
+IF VARTYPE(vNewVal)='L'
+	THIS.forcedate = m.vNewVal
+ENDIF
+
+ENDPROC
+PROCEDURE KeyPress
+LPARAMETERS nKeyCode, nShiftAltCtrl
+DO case
+	CASE nKeyCode = 116 OR nKeyCode = 84  && 'T' enters today's date
+		NODEFAULT
+		this.Value = DATE()
+	CASE nKeyCode = 61 OR nKeyCode = 43 && plus key (add one to the current date)
+		NODEFAULT
+		IF EMPTY(this.Value)
+			this.Value = DATE()
+		ENDIF
+		this.Value = this.Value + 1
+	CASE nKeyCode = 45 &&  minus key (subtract one from the current date)
+		NODEFAULT
+		IF EMPTY(this.Value)
+			this.Value = DATE()
+		ENDIF
+		this.Value = this.Value - 1
+	OTHERWISE
+		DODEFAULT(nKeyCode,nShiftAltCtrl)
+ENDCASE
+ENDPROC
+PROCEDURE maxdate_assign
+LPARAMETERS vNewVal
+DO case
+	CASE VARTYPE(vNewVal)='D'
+		THIS.maxdate = m.vNewVal
+	CASE VARTYPE(vNewVal)='T'
+		this.MaxDate = TTOD(vNewVal)
+ENDCASE
+
+ENDPROC
+PROCEDURE mindate_assign
+LPARAMETERS vNewVal
+DO case
+	CASE VARTYPE(vNewVal)='D'
+		THIS.mindate = m.vNewVal
+	CASE VARTYPE(vNewVal)='T'
+		this.mindate = TTOD(vNewVal)
+ENDCASE
+
+ENDPROC
+PROCEDURE ProgrammaticChange
+IF VARTYPE(this.Value)='T'
+	this.Value = TTOD(this.Value)
+ENDIF 
+ENDPROC
+PROCEDURE Valid
+LOCAL ldMin,ldMax,lnResult,lcText
+
+IF EMPTY(This.MinDate) AND EMPTY(this.MaxDate)
+	RETURN .t.
+ENDIF
+
+* set the minimum allowable date
+DO case
+	CASE VARTYPE(this.MinDate)='N'
+		ldMin = DATE() - this.MinDate
+	CASE VARTYPE(this.MinDate)='D'
+		ldMin = this.MinDate
+ENDCASE
+* set the maximum allowable date
+DO case
+	CASE VARTYPE(this.MaxDate)='N'
+		ldMax = DATE() + this.MaxDate
+	CASE VARTYPE(this.MaxDate)='D'
+		ldMax = this.MaxDate
+ENDCASE
+
+* make sure the entered value is allowable
+IF !EMPTY(this.Value)
+	DO CASE
+		CASE !EMPTY(ldMin) AND this.Value < ldMin
+			lcText = 'Date entered was before '+TRAN(ldMin)
+		CASE !EMPTY(ldMax) AND this.Value > ldMax
+			lcText = 'Date entered was after '+TRAN(ldMax)
+	ENDCASE 		
+	IF !EMPTY(lcText)
+		lcText = lcText + ' and may have been in error.'
+		IF this.ForceDate
+			lcText = lcText + CHR(13)+CHR(10)+'Are you satisfied with this entry?'
+		ENDIF
+		lnResult = MESSAGEBOX(lcText,IIF(this.ForceDate,0,4),'Invalid Date Entered')
+	ENDIF
+ENDIF
+
+RETURN IIF(VARTYPE(lnResult)#'N' OR lnResult = 6,.t.,0)
+
+ENDPROC
+]]></methods>
+		<ole/>
+		<ole2/>
+		<reserved1><![CDATA[Class]]></reserved1>
+		<reserved2><![CDATA[1]]></reserved2>
+		<reserved3><![CDATA[maxdate specifies the latest allowable date (can be a date or a number of days from the current date)
+mindate specifies the earliest allowed date (can be a date or a number of days from the current date)
+forcedate doesn't allow the user to override the date settings
+*forcedate_assign 
+*maxdate_assign 
+*mindate_assign 
+]]></reserved3>
+		<reserved4><![CDATA[..\..\icons\textbox_date.ico]]></reserved4>
+		<reserved5/>
+		<reserved6><![CDATA[Pixels]]></reserved6>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+	<class>
+		<platform>COMMENT</platform>
+		<uniqueid>RESERVED</uniqueid>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname><![CDATA[cats_datebox]]></objname>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+</VFPData>

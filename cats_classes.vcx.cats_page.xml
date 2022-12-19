@@ -1,0 +1,62 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vcx_schema.xsd">
+	<class>
+		<platform>WINDOWS</platform>
+		<uniqueid>_1F60O3BDN</uniqueid>
+		<class><![CDATA[page]]></class>
+		<classloc/>
+		<baseclass><![CDATA[page]]></baseclass>
+		<objname><![CDATA[cats_page]]></objname>
+		<parent/>
+		<properties><![CDATA[Caption = "Page1"
+Height = 194
+Width = 194
+Name = "cats_page"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE Activate
+IF VARTYPE(this.nActivebackcolor)='N' AND this.nActiveBackColor >= 0
+	this.BackColor = this.nActiveBackColor
+ENDIF
+ENDPROC
+PROCEDURE Deactivate
+this.ResetToDefault('Backcolor')
+ENDPROC
+]]></methods>
+		<ole/>
+		<ole2/>
+		<reserved1><![CDATA[Class]]></reserved1>
+		<reserved2><![CDATA[1]]></reserved2>
+		<reserved3><![CDATA[nactivebackcolor
+]]></reserved3>
+		<reserved4/>
+		<reserved5/>
+		<reserved6><![CDATA[Pixels]]></reserved6>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+	<class>
+		<platform>COMMENT</platform>
+		<uniqueid>RESERVED</uniqueid>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname><![CDATA[cats_page]]></objname>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+</VFPData>

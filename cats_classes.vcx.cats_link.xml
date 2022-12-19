@@ -1,0 +1,216 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vcx_schema.xsd">
+	<class>
+		<platform>WINDOWS</platform>
+		<uniqueid>_1CM0O5R30</uniqueid>
+		<class><![CDATA[label]]></class>
+		<classloc/>
+		<baseclass><![CDATA[label]]></baseclass>
+		<objname><![CDATA[cats_link]]></objname>
+		<parent/>
+		<properties><![CDATA[AutoSize = .T.
+FontUnderline = .T.
+BackStyle = 0
+Caption = "Label1"
+Height = 17
+MousePointer = 15
+Width = 40
+ForeColor = 0,0,255
+mouseover_forecolor = -1
+mouseover_backcolor = -1
+mouseover_font = 
+mousedown_forecolor = -1
+mousedown_backcolor = -1
+Name = "cats_link"
+]]></properties>
+		<protected/>
+		<methods><![CDATA[PROCEDURE fonttostring
+*!*	LOCAL lcFont
+*!*	lcFont = ''
+*!*	IF this.FontBold
+*!*		lcFont = lcFont + 'BOLD'
+*!*	ENDIF
+*!*	IF this.FontUnderline
+*!*		lcFont = lcFont + 'UNDER'
+*!*	ENDIF
+*!*	IF this.FontItalic
+*!*		lcFont = lcFont + 'ITALIC'
+*!*	ENDIF
+*!*	lcFont = lcFont + ',' + this.FontName + ',' + TRAN(this.FontSize)
+*!*	RETURN lcFont
+
+ENDPROC
+PROCEDURE Init
+this.SaveFont()
+ENDPROC
+PROCEDURE MouseDown
+LPARAMETERS nButton, nShift, nXCoord, nYCoord
+IF this.MouseDown_Forecolor > 0
+	this.ForeColor = this.MouseDown_ForeColor
+ENDIF
+IF this.MouseDown_Backcolor > 0
+	this.BackColor = this.MouseDown_BackColor
+ENDIF
+ENDPROC
+PROCEDURE mousedown_backcolor_assign
+LPARAMETERS vNewVal
+IF VARTYPE(m.vNewVal)='N'
+	THIS.mousedown_backcolor = m.vNewVal
+ENDIF 
+
+ENDPROC
+PROCEDURE mousedown_forecolor_assign
+LPARAMETERS vNewVal
+IF VARTYPE(m.vNewVal)='N'
+	THIS.mousedown_forecolor = m.vNewVal
+ENDIF 
+
+ENDPROC
+PROCEDURE MouseEnter
+LPARAMETERS nButton, nShift, nXCoord, nYCoord
+this.SaveFont()
+IF this.MouseOver_Forecolor > 0
+	this.ForeColor = this.MouseOver_ForeColor
+ENDIF
+IF this.MouseOver_Backcolor > 0
+	this.BackColor = this.MouseOver_BackColor
+ENDIF
+IF !EMPTY(this.MouseOver_Font)
+	this.StringToFont(this.MouseOver_Font)
+ENDIF
+ENDPROC
+PROCEDURE MouseLeave
+LPARAMETERS nButton, nShift, nXCoord, nYCoord
+this.RestoreFont()
+ENDPROC
+PROCEDURE mouseover_backcolor_assign
+LPARAMETERS vNewVal
+IF VARTYPE(vNewVal)='N'
+	this.Mouseover_backcolor = vNewVal
+ENDIF
+ENDPROC
+PROCEDURE mouseover_font_assign
+LPARAMETERS vNewVal
+IF VARTYPE(vNewVal)='C'
+	THIS.MouseOver_Font = m.vNewVal
+ENDIF
+
+ENDPROC
+PROCEDURE mouseover_forecolor_assign
+LPARAMETERS vNewVal
+IF VARTYPE(vNewVal)='N'
+	this.MouseOver_Forecolor = vNewVal
+ENDIF
+ENDPROC
+PROCEDURE MouseUp
+LPARAMETERS nButton, nShift, nXCoord, nYCoord
+this.ResetToDefault('Forecolor')
+this.ResetToDefault('BackColor')
+ENDPROC
+PROCEDURE restorefont
+this.ForeColor = this._forecolor
+this.BackColor = this._backcolor
+this.FontName = this._fontname
+this.FontSize = this._fontsize
+this.FontItalic = this._fontItalic
+this.FontBold = this._fontbold
+this.FontUnderline = this._fontunderline
+ENDPROC
+PROCEDURE savefont
+this._fontunderline = this.FontUnderline
+this._fontitalic = this.FontItalic
+this._fontbold = this.FontBold
+this._fontname = this.FontName
+this._fontsize = this.FontSize
+this._backcolor = this.BackColor
+this._Forecolor = this.ForeColor
+ENDPROC
+PROCEDURE stringtofont
+LPARAMETERS tcFontString
+IF VARTYPE(tcFontString)='C'
+	LOCAL lnAt,lcType,lcFontName,lnSize
+	lcType = tcFontString
+	lnAt = AT(',',tcFontString)
+	IF lnAt > 0
+		lcFontName = SUBSTR(tcFontString,lnAt+1)
+		lcType = LEFT(tcFontString,lnAt-1)
+		lnAt = AT(',',lcFontName)
+		IF lnAt > 0
+			lnSize = VAL(SUBSTR(lcFontName,lnAt+1))
+			lcFontName = LEFT(lcFontName,lnAt-1)
+		ENDIF
+	ENDIF
+
+	IF !EMPTY(lcType)
+		this.FontBold = 'BOLD'$lcType
+		this.FontItalic = 'ITALIC'$lcType
+		this.FontUnderline = 'UNDER'$lcType
+	ENDIF
+	
+	IF !EMPTY(lcFontName)
+		this.FontName = lcFontName
+	ENDIF
+
+	IF !EMPTY(lnSize) AND lnSize > 0
+		this.FontSize = lnSize
+	ENDIF
+ENDIF
+ENDPROC
+]]></methods>
+		<ole/>
+		<ole2/>
+		<reserved1><![CDATA[Class]]></reserved1>
+		<reserved2><![CDATA[1]]></reserved2>
+		<reserved3><![CDATA[mouseover_forecolor sets fore and background colors
+mouseover_backcolor
+mouseover_font
+mousedown_forecolor text color to display on mouse-down
+mousedown_backcolor background color to display on mousedown
+_forecolor
+_backcolor
+_fontname
+_fontsize
+_fontbold
+_fontitalic
+_fontunderline
+*mouseover_forecolor_assign 
+*mouseover_backcolor_assign 
+*mouseover_font_assign 
+*fonttostring converts the current font settings to a string
+*stringtofont updates the font settings based on the string
+*mousedown_forecolor_assign 
+*mousedown_backcolor_assign 
+*savefont 
+*restorefont 
+]]></reserved3>
+		<reserved4><![CDATA[..\..\icons\cats_link.ico]]></reserved4>
+		<reserved5/>
+		<reserved6><![CDATA[Pixels]]></reserved6>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+	<class>
+		<platform>COMMENT</platform>
+		<uniqueid>RESERVED</uniqueid>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname><![CDATA[cats_link]]></objname>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+</VFPData>

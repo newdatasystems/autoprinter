@@ -1,0 +1,211 @@
+<?xml version = "1.0" encoding="Windows-1252" standalone="yes"?>
+<VFPData xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vcx_schema.xsd">
+	<class>
+		<platform>WINDOWS</platform>
+		<uniqueid>_0T50WZAPM</uniqueid>
+		<class><![CDATA[textbox]]></class>
+		<classloc/>
+		<baseclass><![CDATA[textbox]]></baseclass>
+		<objname><![CDATA[cats_textbox]]></objname>
+		<parent/>
+		<properties><![CDATA[Height = 21
+SpecialEffect = 1
+Width = 100
+BorderColor = 128,128,128
+ulastvalue = 
+bshowzeroasblank = .F.
+_bhidingzero = .F.
+_coldinputmask = 
+_bchanged = .F.
+Name = "cats_textbox"
+]]></properties>
+		<protected><![CDATA[ulastvalue
+_bhidingzero
+_coldinputmask
+_hidezero
+]]></protected>
+		<methods><![CDATA[PROCEDURE bshowzeroasblank_assign
+LPARAMETERS vNewVal
+IF vNewVal # this.bShowZeroasblank
+	IF vNewVal
+		THIS.bShowZeroAsBlank = .t.
+		this._HideZero(.t.)
+	ELSE
+		this._HideZero(.f.)
+		this.bShowZeroAsBlank = .f.
+	ENDIF
+ENDIF
+
+
+ENDPROC
+PROCEDURE fitmasktovalue
+* sizes the textbox's InputMask so that it can contain
+* the current value (this is handy for when the mask would otherwise display *'s)
+	IF VARTYPE(this.Value)='N'
+	LOCAL lnValueLength,lcNewMask,lbSeenComma,lnDecimalAt
+
+	lbSeenComma = ','$this.InputMask
+	lnDecimalAt = AT('.',this.InputMask)
+
+	lnValueLength = 1
+	DO WHILE 10 ^ lnValueLength < ABS(this.Value)
+		lnValueLength = lnValueLength + 1 
+	ENDDO 
+
+	lcNewMask = ''
+
+	FOR lnStep = lnValueLength TO 1 STEP -1
+		lcNewMask = lcNewMask + '9'
+		IF lbSeenComma and lnStep#1 AND (lnStep-1) % 3 = 0
+			lcNewMask = lcNewMask + ','
+		ENDIF 
+	ENDFOR 
+
+	IF lnDecimalAt > 0
+		lcNewMask = lcNewMask + SUBSTR(this.InputMask,lnDecimalAt)
+	ENDIF 
+
+	this.InputMask = lcNewMask
+ENDIF 
+ENDPROC
+PROCEDURE getlastvalue
+RETURN this.uLastValue
+ENDPROC
+PROCEDURE GotFocus
+this.uLastValue = this.Value
+this._bChanged = .f.
+this._HideZero(.f.)
+
+ENDPROC
+PROCEDURE InteractiveChange
+this._bChanged = .t.
+ENDPROC
+PROCEDURE KeyPress
+LPARAMETERS nKeyCode, nShiftAltCtrl
+IF !this.ReadOnly AND this.Enabled AND VARTYPE(this.Value)$'DT' AND INLIST(nKeyCode,116,102,108,45,61,43)
+	LOCAL ldToday
+	ldToday = IIF(VARTYPE(global_dResetDate)='D',global_dResetDate,DATE())
+	* if we're displaying dates in this field then there are some keyboard shortcuts that can be used
+	DO CASE
+		CASE nShiftAltCtrl = 0 AND nKeyCode = 116 && ('t') today
+			this.Value = m.ldToday
+			this.InteractiveChange()
+		CASE nShiftAltCtrl = 0 AND nKeyCode = 102 && ('f') first day of month
+			this.Value = DATE(YEAR(m.ldToday),MONTH(m.ldToday),1)
+			this.InteractiveChange()
+		CASE nShiftAltCtrl = 0 AND nKeyCode = 108 && ('l') last day of month
+			this.Value = GOMONTH(DATE(YEAR(m.ldToday),MONTH(m.ldToday),1),1)-1
+			this.InteractiveChange()
+		CASE nShiftAltCtrl = 0 AND nKeyCode = 45 && ('-') back one day
+			IF EMPTY(this.Value)
+				this.Value = m.ldToday
+			ENDIF
+			this.Value = this.Value - 1
+			this.InteractiveChange()
+		CASE (nShiftAltCtrl = 0 AND nKeyCode = 61) OR nKeyCode = 43 && ('+') forward one day
+			IF EMPTY(this.Value)
+				this.Value = m.ldToday
+			ENDIF
+			this.Value = this.Value + 1
+			this.InteractiveChange()
+	ENDCASE
+ENDIF
+ENDPROC
+PROCEDURE LostFocus
+this._HideZero(.t.)
+IF this._bChanged
+	this._bChanged = .f.	
+	this.ChangedAndLostFocus()
+ENDIF
+
+ENDPROC
+PROCEDURE value_access
+IF this._bHidingZero
+	RETURN 0
+ENDIF
+RETURN THIS.VALUE
+
+ENDPROC
+PROCEDURE value_assign
+LPARAMETERS vNewVal
+THIS.VALUE = m.vNewVal
+IF this._bHidingZero
+	IF EMPTY(m.vNewval)
+		this.Value = ''
+	ELSE
+		this._bHidingZero = .f.
+		this.InputMask = this._cOldInputMask
+		this._cOldInputMask = ''
+	ENDIF
+ENDIF
+
+ENDPROC
+PROCEDURE _hidezero
+LPARAMETERS tbHideZero
+IF this.bShowZeroAsBlank
+	IF tbHideZero 
+		IF VARTYPE(this.Value)='N' AND this.Value = 0
+			this._bHidingZero = .t.
+			this._coldinputmask = this.InputMask
+			this.InputMask = ''
+			this.Value = ''
+		ENDIF
+	ELSE
+		IF this._bHidingZero
+			this._bHidingZero = .f.
+			this.InputMask = this._cOldInputMask
+			this.Value = 0
+			this._cOldInputMask = ''
+		ENDIF
+	ENDIF
+ENDIF
+ENDPROC
+]]></methods>
+		<ole/>
+		<ole2/>
+		<reserved1><![CDATA[Class]]></reserved1>
+		<reserved2><![CDATA[1]]></reserved2>
+		<reserved3><![CDATA[ulastvalue
+bshowzeroasblank set to true to display a blank field when the value is 0
+_bhidingzero
+_coldinputmask
+_bchanged
+*getlastvalue 
+*fitmasktovalue 
+*bshowzeroasblank_assign 
+*value_access 
+*value_assign 
+*_hidezero helper method to allow the text field to be blank when the value is 0
+*changedandlostfocus 
+]]></reserved3>
+		<reserved4/>
+		<reserved5/>
+		<reserved6><![CDATA[Pixels]]></reserved6>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+	<class>
+		<platform>COMMENT</platform>
+		<uniqueid>RESERVED</uniqueid>
+		<class/>
+		<classloc/>
+		<baseclass/>
+		<objname><![CDATA[cats_textbox]]></objname>
+		<parent/>
+		<properties/>
+		<protected/>
+		<methods/>
+		<ole/>
+		<ole2/>
+		<reserved1/>
+		<reserved2/>
+		<reserved3/>
+		<reserved4/>
+		<reserved5/>
+		<reserved6/>
+		<reserved7/>
+		<reserved8/>
+		<user/>
+	</class>
+</VFPData>
